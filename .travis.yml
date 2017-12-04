@@ -1,0 +1,44 @@
+language: c
+dist: precise
+
+env:
+    - SMVERSION=1.7
+    - SMVERSION=1.8
+    - SMVERSION=1.9
+
+matrix:
+    fast_finish: true
+    allow_failures:
+    - env: SMVERSION=1.7
+
+before_install:
+    - sudo apt-get update
+    - sudo apt-get install gcc-multilib
+    - sudo apt-get install lib32stdc++6
+
+before_script:
+    - wget -q "http://www.sourcemod.net/latest.php?version=$SMVERSION&os=linux" -O sourcemod.tar.gz
+    - tar -xzf sourcemod.tar.gz
+    - cd addons/sourcemod/scripting/
+    - chmod +x spcomp
+    - mkdir ../artifact/addons/sourcemod/
+    - mkdir ../artifact/addons/sourcemod/plugins
+
+script:
+    - ./spcomp -o../artifact/addons/sourcemod/plugins/csgoranks CSGO_Ranks.sp
+
+before_deploy:
+    - cd ..
+    - mkdir artifact/addons/sourcemod/scripting
+    - mkdir artifact/addons/sourcemod/scripting/include
+    - cp scripting/CSGO_Ranks.sp artifact/addons/sourcemod/scripting/CSGO_Ranks.sp
+    - cp scripting/include/csgoranks.inc artifact/addons/sourcemod/scripting/include/csgoranks.inc
+    - tar -czf CSGORanks-${TRAVIS_TAG}.tar.gz -C artifact/ addons/
+
+deploy:
+    provider: releases
+    api_key: ${GH_DEPLOYTOKEN}
+    file: CSGORanks-${TRAVIS_TAG}.tar.gz
+    skip_cleanup: true
+    on:
+        tags: true

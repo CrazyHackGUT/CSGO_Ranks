@@ -21,7 +21,8 @@ before_script:
     - tar -xzf sourcemod.tar.gz
     - cd addons/sourcemod/scripting/
     - chmod +x spcomp
-    - cp ${TRAVIS_BUILD_DIR}/scripting/* ./
+    - cp ${TRAVIS_BUILD_DIR}/scripting/CSGO_Ranks.sp ./CSGO_Ranks.sp
+    - cp ${TRAVIS_BUILD_DIR}/scripting/include/csgoranks.inc ./include/csgoranks.inc
     - mkdir ${TRAVIS_BUILD_DIR}/addons/sourcemod/artifact/
     - mkdir ${TRAVIS_BUILD_DIR}/addons/sourcemod/artifact/addons/
     - mkdir ${TRAVIS_BUILD_DIR}/addons/sourcemod/artifact/addons/sourcemod/

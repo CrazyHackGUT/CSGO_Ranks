@@ -21,6 +21,7 @@ before_script:
     - tar -xzf sourcemod.tar.gz
     - cd addons/sourcemod/scripting/
     - chmod +x spcomp
+    - mkdir ${TRAVIS_BUILD_DIR}/addons/sourcemod/artifact/
     - mkdir ${TRAVIS_BUILD_DIR}/addons/sourcemod/artifact/addons/
     - mkdir ${TRAVIS_BUILD_DIR}/addons/sourcemod/artifact/addons/sourcemod/
     - mkdir ${TRAVIS_BUILD_DIR}/addons/sourcemod/artifact/addons/sourcemod/plugins

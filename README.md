@@ -1,4 +1,5 @@
 # CSGO Ranks
+## [![release](https://github-release-version.herokuapp.com/github/CrazyHackGUT/CSGO_Ranks/release.svg?style=flat)](https://github.com/CrazyHackGUT/CSGO_Ranks/releases/latest) [![Build Status](https://travis-ci.org/CrazyHackGUT/CSGO_Ranks.svg?branch=master)](https://travis-ci.org/CrazyHackGUT/CSGO_Ranks)
 Provides a functions for editing player ranks in Score Table
 
 ## Requirements
@@ -24,7 +25,13 @@ The second way:
 - Download compiled file. <br />![Telegram Bot](https://i.imgur.com/LKjijau.png)
 
 ## Installing
-WiP...
+- Upload file **/addons/sourcemod/plugins/csgoranks.smx** into equivalent directory on your server.
+- Load plugin with **sm plugins load** command.
 
 ## Updating
-WiP...
+- Upload file **/addons/sourcemod/plugins/csgoranks.smx** into equivalent directory on your server.
+- Reload plugin with **sm plugins reload** command.
+
+## Deleting
+- Delete file **/addons/sourcemod/plugins/csgoranks.smx** from your server.
+- Unload plugin with **sm plugins unload** command.

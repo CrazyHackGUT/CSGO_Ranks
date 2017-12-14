@@ -67,6 +67,33 @@ native void SetPlayerCompetitiveRank(int iClient, CompetitiveGORank eRank);
 native CompetitiveGORank GetPlayerCompetitiveRank(int iClient);
 
 /******************************************************************************
+ * Forwards
+ ******************************************************************************/
+
+/**
+ * Fires when some plugin tries change a player competitive rank.
+ *
+ * @param       int                 Player entity ID.
+ * @param       CompetitiveGORank   Reference on var with new player Competitive Rank.
+ *                                  You can change variable value.
+ *
+ * @return      Action              Plugin_Continue -- allow change.
+ *                                  Plugin_Changed  -- change a player rank.
+ *                                  Plugin_Stop     -- abort rank changing.
+ */
+forward Action OnPreChangePlayerCompetitiveRank(int iClient, CompetitiveGORank &eRank);
+
+/**
+ * Fires when some plugin changed a player competitive rank.
+ *
+ * @param       int                 Player entity ID.
+ * @param       CompetitiveGORank   New player Competitive Rank.
+ *
+ * @return      void
+ */
+forward void OnPostChangePlayerCompetitiveRank(int iClient, CompetitiveGORank eRank);
+
+/******************************************************************************
  * Plugin Library
  ******************************************************************************/
 public SharedPlugin __pl_csgoranks = {

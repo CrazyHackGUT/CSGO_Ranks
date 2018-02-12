@@ -18,18 +18,20 @@ enum ForwardTypeEnum {
 // stock const char          gc_usermsg_ranks[]            = "ServerRankRevealAll";
 stock char          gc_usermsg_ranks[]                  = "ServerRankRevealAll";    // bad-bad-bad
 
-CompetitiveGORank   g_iSelectedRanks[MAXPLAYERS + 1];
-Handle              g_hForwards[ForwardTypeEnum];
-int                 g_iCompetitiveRankOffset;
-int                 g_iPlayerManagerEntity;
-bool                g_bWorking;
+CompetitiveGORankType   g_iSelectedRanksTypes[MAXPLAYERS + 1];
+CompetitiveGORank       g_iSelectedRanks[MAXPLAYERS + 1];
+Handle                  g_hForwards[ForwardTypeEnum];
+int                     g_iCompetitiveRankTypeOffset;
+int                     g_iCompetitiveRankOffset;
+int                     g_iPlayerManagerEntity;
+bool                    g_bWorking;
 
 /******************************************************************************
  * Plugin Information
  ******************************************************************************/
 public Plugin myinfo = {
     description = "Provides API for changing player ranks",
-    version     = "1.1.0.0",
+    version     = "1.2.0.0",
     author      = "CrazyHackGUT aka Kruzya",
     name        = "[CSGO] Competitive Ranks API",
     url         = "https://kruzefag.ru/"
@@ -44,9 +46,11 @@ public APLRes AskPluginLoad2(Handle hMySelf, bool bLate, char[] szError, int iMa
         return APLRes_Failure;
     }
 
-    CreateNative("IsCompetitiveRankWorking", Native_IsWorking);
-    CreateNative("SetPlayerCompetitiveRank", Native_SetRank);
-    CreateNative("GetPlayerCompetitiveRank", Native_GetRank);
+    CreateNative("IsCompetitiveRankWorking",        Native_IsWorking);
+    CreateNative("SetPlayerCompetitiveRank",        Native_SetRank);
+    CreateNative("GetPlayerCompetitiveRank",        Native_GetRank);
+    CreateNative("SetPlayerCompetitiveRankType",    Native_SetRankType);
+    CreateNative("GetPlayerCompetitiveRankType",    Native_GetRankType);
 
     g_hForwards[PreForward]     = CreateGlobalForward("OnPreChangePlayerCompetitiveRank",   ET_Hook,    Param_Cell, Param_CellByRef);
     g_hForwards[PostForward]    = CreateGlobalForward("OnPostChangePlayerCompetitiveRank",  ET_Ignore,  Param_Cell, Param_Cell);
@@ -61,8 +65,9 @@ public void OnPluginStart() {
 }
 
 public void OnMapStart() {
-    g_iCompetitiveRankOffset = FindSendPropInfo("CCSPlayerResource", "m_iCompetitiveRanking");
-    g_iPlayerManagerEntity = FindEntityByClassname(MaxClients + 1, "cs_player_manager");
+    g_iCompetitiveRankTypeOffset    = FindSendPropInfo("CCSPlayerResource", "m_iCompetitiveRankType");
+    g_iCompetitiveRankOffset        = FindSendPropInfo("CCSPlayerResource", "m_iCompetitiveRanking");
+    g_iPlayerManagerEntity          = FindEntityByClassname(MaxClients + 1, "cs_player_manager");
 
     if (g_iPlayerManagerEntity != -1) {
         g_bWorking = SDKHookEx(g_iPlayerManagerEntity, SDKHook_ThinkPost, OnThinkPost);
@@ -103,7 +108,7 @@ public int Native_SetRank(Handle hPlugin, int iParams) {
         BlameAPIError("Invalid Rank ID (%d)", iRank);
     }
 
-    g_iSelectedRanks[iClient] = iRank;
+    UTIL_SetRank(iClient, iRank);
     return 1;
 }
 
@@ -120,6 +125,38 @@ public int Native_GetRank(Handle hPlugin, int iParams) {
     return view_as<int>(UTIL_GetRank(iClient));
 }
 
+public int Native_SetRankType(Handle hPlugin, int iParams) {
+    if (!UTIL_IsWorking()) {
+        BlameAPIError("Plugin can't work on this map!");
+    }
+
+    int iClient = GetNativeCell(1);
+    if (iClient < 1 || iClient > MaxClients) {
+        BlameAPIError("Invalid Client entity ID (%d)", iClient);
+    }
+
+    CompetitiveGORankType iRankType = GetNativeCell(2);
+    if (!UTIL_IsValidCompetitiveRankType(iRankType)) {
+        BlameAPIError("Invalid Rank Type ID (%d)", iRankType);
+    }
+
+    UTIL_SetRankType(iClient, iRankType);
+    return 1;
+}
+
+public int Native_GetRankType(Handle hPlugin, int iParams) {
+    if (!UTIL_IsWorking()) {
+        BlameAPIError("Plugin can't work on this map!");
+    }
+
+    int iClient = GetNativeCell(1);
+    if (iClient < 1 || iClient > MaxClients) {
+        BlameAPIError("Invalid Client entity ID (%d)", iClient);
+    }
+
+    return view_as<int>(UTIL_GetRankType(iClient));
+}
+
 /******************************************************************************
  * UTILs
  ******************************************************************************/
@@ -132,20 +169,43 @@ void UTIL_SetRank(int iClient, CompetitiveGORank eRank, bool bFirePreForward = t
         return;
     }
 
-    if (bFirePreForward && !FireAPIEvent(PreForward, iClient, eRank)) {
+    CompetitiveGORankType eRankType = UTIL_GetRankType(iClient);
+    if (bFirePreForward && !FireAPIEvent(PreForward, iClient, eRank, eRankType)) {
         return;
     }
 
     g_iSelectedRanks[iClient] = eRank;
-    FireAPIEvent(PostForward, iClient, eRank);
+    FireAPIEvent(PostForward, iClient, eRank, eRankType);
+}
+
+void UTIL_SetRankType(int iClient, CompetitiveGORankType eRankType, bool bFirePreForward = true) {
+    if (!UTIL_IsValidCompetitiveRankType(eRankType)) {
+        return;
+    }
+
+    CompetitiveGORank eRank = UTIL_GetRank(iClient);
+    if (bFirePreForward && !FireAPIEvent(PreForward, iClient, eRank, eRankType)) {
+        return;
+    }
+
+    g_iSelectedRanksTypes[iClient] = eRankType;
+    FireAPIEvent(PostForward, iClient, eRank, eRankType);
 }
 
 CompetitiveGORank UTIL_GetRank(int iClient) {
     return g_iSelectedRanks[iClient];
 }
 
+CompetitiveGORankType UTIL_GetRankType(int iClient) {
+    return g_iSelectedRanksTypes[iClient];
+}
+
 bool UTIL_IsValidCompetitiveRank(CompetitiveGORank eRank) {
     return (eRank >= NoRank && eRank <= GlobalElite);
+}
+
+bool UTIL_IsValidCompetitiveRankType(CompetitiveGORankType eRankType) {
+    return (eRankType >= Default && eRankType <= Partners);
 }
 
 void UTIL_UpdateScoreTable(int iClient = 0) {
@@ -166,7 +226,8 @@ void UTIL_UpdateScoreTable(int iClient = 0) {
  * Hooks
  ******************************************************************************/
 public void OnThinkPost(int iCompetitiveRankEntity) {
-	SetEntDataArray(iCompetitiveRankEntity, g_iCompetitiveRankOffset, view_as<int>(g_iSelectedRanks), MaxClients + 1);
+    SetEntDataArray(iCompetitiveRankEntity, g_iCompetitiveRankOffset, view_as<int>(g_iSelectedRanks), MaxClients + 1);
+    SetEntDataArray(iCompetitiveRankEntity, g_iCompetitiveRankTypeOffset, view_as<int>(g_iSelectedRanksTypes), MaxClients + 1);
 }
 
 public Action OnPlayerRunCmd(int iClient, int &iButtons) {
@@ -182,7 +243,7 @@ public void OnAnnouncePhaseEnd() {
 /******************************************************************************
  * Forwards
  ******************************************************************************/
-bool FireAPIEvent(ForwardTypeEnum eForwardType, int iClient, CompetitiveGORank &eRank) {
+bool FireAPIEvent(ForwardTypeEnum eForwardType, int iClient, CompetitiveGORank &eRank, CompetitiveGORankType &eRankType) {
     Handle hForward = g_hForwards[eForwardType];
     if (GetForwardFunctionCount(hForward) == 0) {
         return false;
@@ -195,12 +256,18 @@ bool FireAPIEvent(ForwardTypeEnum eForwardType, int iClient, CompetitiveGORank &
     (eForwardType == PreForward) ?
         Call_PushCellRef(eRank) :
         Call_PushCell(eRank);
+    (eForwardType == PreForward) ?
+        Call_PushCellRef(eRankType) :
+        Call_PushCell(eRankType);
 
     Call_Finish(eResult);
 
     if (eForwardType == PreForward && !UTIL_IsValidCompetitiveRank(eRank)) {
-        BlameGenericError("Received invalid Competitive Rank from forward. Received: %d");
+        BlameGenericError("Received invalid Competitive Rank from forward. Received: %d", eRank);
         return false;   // unreachable code.
+    } else if (eForwardType == PreForward && !UTIL_IsValidCompetitiveRankType(eRankType)) {
+        BlameGenericError("Received invalid Competitive Rank Type from forward. Received: %d", eRankType);
+        return false;   // unreachable code too.
     }
 
     return (eResult != Plugin_Stop);

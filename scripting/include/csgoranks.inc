@@ -34,6 +34,11 @@ enum CompetitiveGORank {
     GlobalElite                     /**< The Global Elite */
 }
 
+enum CompetitiveGORankType {
+    Default,                        /**< Default rank */
+    Partners                        /**< Rank in style "Operation Hydra - Partners" */
+}
+
 /******************************************************************************
  * Natives
  ******************************************************************************/
@@ -66,6 +71,27 @@ native void SetPlayerCompetitiveRank(int iClient, CompetitiveGORank eRank);
  */
 native CompetitiveGORank GetPlayerCompetitiveRank(int iClient);
 
+/**
+ * Changes a player rank type.
+ *
+ * @param       int                     Player entity ID.
+ * @param       CompetitiveGORankType   The new Rank Type.
+ *
+ * @return      void
+ * @error       Competitive Ranks not working or Invalid player entity ID or Invalid new Rank Type.
+ */
+native void SetPlayerCompetitiveRankType(int iClient, CompetitiveGORankType eRankType);
+
+/**
+ * Returns a player rank type.
+ *
+ * @param       int                 Player entity ID.
+ *
+ * @return      CompetitiveGORankType
+ * @error       Competitive Ranks not working or Invalid player entity ID.
+ */
+native CompetitiveGORankType GetPlayerCompetitiveRankType(int iClient);
+
 /******************************************************************************
  * Forwards
  ******************************************************************************/
@@ -73,25 +99,28 @@ native CompetitiveGORank GetPlayerCompetitiveRank(int iClient);
 /**
  * Fires when some plugin tries change a player competitive rank.
  *
- * @param       int                 Player entity ID.
- * @param       CompetitiveGORank   Reference on var with new player Competitive Rank.
- *                                  You can change variable value.
+ * @param       int                     Player entity ID.
+ * @param       CompetitiveGORank       Reference on var with new player Competitive Rank.
+ *                                      You can change variable value.
+ * @param       CompetitiveGORankType   Reference on var with new player Competitive Rank Type.
+ *                                      You can change variable value.
  *
- * @return      Action              Plugin_Continue -- allow change.
- *                                  Plugin_Changed  -- change a player rank.
- *                                  Plugin_Stop     -- abort rank changing.
+ * @return      Action                  Plugin_Continue -- allow change.
+ *                                      Plugin_Changed  -- change a player rank.
+ *                                      Plugin_Stop     -- abort rank changing.
  */
-forward Action OnPreChangePlayerCompetitiveRank(int iClient, CompetitiveGORank &eRank);
+forward Action OnPreChangePlayerCompetitiveRank(int iClient, CompetitiveGORank &eRank, CompetitiveGORankType &eRankType);
 
 /**
  * Fires when some plugin changed a player competitive rank.
  *
- * @param       int                 Player entity ID.
- * @param       CompetitiveGORank   New player Competitive Rank.
+ * @param       int                     Player entity ID.
+ * @param       CompetitiveGORank       New player Competitive Rank.
+ * @param       CompetitiveGORankType   New player Competitive Rank Type.
  *
  * @return      void
  */
-forward void OnPostChangePlayerCompetitiveRank(int iClient, CompetitiveGORank eRank);
+forward void OnPostChangePlayerCompetitiveRank(int iClient, CompetitiveGORank eRank, CompetitiveGORankType eRankType);
 
 /******************************************************************************
  * Plugin Library
@@ -111,5 +140,7 @@ public void __pl_csgoranks_SetNTVOptional() {
     MarkNativeAsOptional("IsCompetitiveRankWorking");
     MarkNativeAsOptional("SetPlayerCompetitiveRank");
     MarkNativeAsOptional("GetPlayerCompetitiveRank");
+    MarkNativeAsOptional("SetPlayerCompetitiveRankType");
+    MarkNativeAsOptional("GetPlayerCompetitiveRankType");
 }
 #endif

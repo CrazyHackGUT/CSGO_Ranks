@@ -18,7 +18,7 @@ enum ForwardTypeEnum {
 // stock const char          gc_usermsg_ranks[]            = "ServerRankRevealAll";
 stock char          gc_usermsg_ranks[]                  = "ServerRankRevealAll";    // bad-bad-bad
 
-CompetitiveGORankType   g_iSelectedRanksTypes[MAXPLAYERS + 1];
+int                     g_iSelectedRanksTypes[MAXPLAYERS + 1];
 CompetitiveGORank       g_iSelectedRanks[MAXPLAYERS + 1];
 Handle                  g_hForwards[ForwardTypeEnum];
 int                     g_iCompetitiveRankTypeOffset;
@@ -31,7 +31,7 @@ bool                    g_bWorking;
  ******************************************************************************/
 public Plugin myinfo = {
     description = "Provides API for changing player ranks",
-    version     = "1.2.0.0",
+    version     = "1.2.0.1",
     author      = "CrazyHackGUT aka Kruzya",
     name        = "[CSGO] Competitive Ranks API",
     url         = "https://kruzefag.ru/"
@@ -188,7 +188,7 @@ void UTIL_SetRankType(int iClient, CompetitiveGORankType eRankType, bool bFirePr
         return;
     }
 
-    g_iSelectedRanksTypes[iClient] = eRankType;
+    g_iSelectedRanksTypes[iClient] = UTIL_CompetitiveGORankTypeToInteger(eRankType);
     FireAPIEvent(PostForward, iClient, eRank, eRankType);
 }
 
@@ -197,7 +197,7 @@ CompetitiveGORank UTIL_GetRank(int iClient) {
 }
 
 CompetitiveGORankType UTIL_GetRankType(int iClient) {
-    return g_iSelectedRanksTypes[iClient];
+    return UTIL_IntegerToCompetitiveGORankType(g_iSelectedRanksTypes[iClient]);
 }
 
 bool UTIL_IsValidCompetitiveRank(CompetitiveGORank eRank) {
@@ -222,12 +222,32 @@ void UTIL_UpdateScoreTable(int iClient = 0) {
     }
 }
 
+int UTIL_CompetitiveGORankTypeToInteger(CompetitiveGORankType eRankType) {
+    int iRes = -1;
+    switch (eRankType) {
+        case Default:   iRes = 0;
+        case Partners:  iRes = 7;
+    }
+
+    return iRes;
+}
+
+CompetitiveGORankType UTIL_IntegerToCompetitiveGORankType(int iRankType) {
+    CompetitiveGORankType eRes = view_as<CompetitiveGORankType>(-1);
+    switch (iRankType) {
+        case 0: eRes = Default;
+        case 7: eRes = Partners;
+    }
+
+    return eRes;
+}
+
 /******************************************************************************
  * Hooks
  ******************************************************************************/
 public void OnThinkPost(int iCompetitiveRankEntity) {
     SetEntDataArray(iCompetitiveRankEntity, g_iCompetitiveRankOffset, view_as<int>(g_iSelectedRanks), MaxClients + 1);
-    SetEntDataArray(iCompetitiveRankEntity, g_iCompetitiveRankTypeOffset, view_as<int>(g_iSelectedRanksTypes), MaxClients + 1);
+    SetEntDataArray(iCompetitiveRankEntity, g_iCompetitiveRankTypeOffset, g_iSelectedRanksTypes, MaxClients + 1);
 }
 
 public Action OnPlayerRunCmd(int iClient, int &iButtons) {

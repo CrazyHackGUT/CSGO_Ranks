@@ -31,7 +31,7 @@ bool                    g_bWorking;
  ******************************************************************************/
 public Plugin myinfo = {
     description = "Provides API for changing player ranks",
-    version     = "1.2.0.1",
+    version     = "1.2.0.2",
     author      = "CrazyHackGUT aka Kruzya",
     name        = "[CSGO] Competitive Ranks API",
     url         = "https://kruzefag.ru/"
@@ -266,7 +266,7 @@ public void OnAnnouncePhaseEnd() {
 bool FireAPIEvent(ForwardTypeEnum eForwardType, int iClient, CompetitiveGORank &eRank, CompetitiveGORankType &eRankType) {
     Handle hForward = g_hForwards[eForwardType];
     if (GetForwardFunctionCount(hForward) == 0) {
-        return false;
+        return true;
     }
 
     Action eResult;
@@ -282,12 +282,16 @@ bool FireAPIEvent(ForwardTypeEnum eForwardType, int iClient, CompetitiveGORank &
 
     Call_Finish(eResult);
 
-    if (eForwardType == PreForward && !UTIL_IsValidCompetitiveRank(eRank)) {
-        BlameGenericError("Received invalid Competitive Rank from forward. Received: %d", eRank);
-        return false;   // unreachable code.
-    } else if (eForwardType == PreForward && !UTIL_IsValidCompetitiveRankType(eRankType)) {
-        BlameGenericError("Received invalid Competitive Rank Type from forward. Received: %d", eRankType);
-        return false;   // unreachable code too.
+    if (eForwardType == PreForward) {
+        if (!UTIL_IsValidCompetitiveRank(eRank)) {
+            BlameGenericError("Received invalid Competitive Rank from forward. Received: %d", eRank);
+            return false;   // unreachable code.
+        }
+
+        if (!UTIL_IsValidCompetitiveRankType(eRankType)) {
+            BlameGenericError("Received invalid Competitive Rank Type from forward. Received: %d", eRankType);
+            return false;   // unreachable code too.
+        }
     }
 
     return (eResult != Plugin_Stop);

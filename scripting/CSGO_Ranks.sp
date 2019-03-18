@@ -15,7 +15,6 @@ enum ForwardTypeEnum {
     Handle:PostForward
 }
 
-// stock const char          gc_usermsg_ranks[]            = "ServerRankRevealAll";
 stock char          gc_usermsg_ranks[]                  = "ServerRankRevealAll";    // bad-bad-bad
 
 int                     g_iSelectedRanksTypes[MAXPLAYERS + 1];
@@ -31,7 +30,7 @@ bool                    g_bWorking;
  ******************************************************************************/
 public Plugin myinfo = {
     description = "Provides API for changing player ranks",
-    version     = "1.2.0.2",
+    version     = "1.2.0.3",
     author      = "CrazyHackGUT aka Kruzya",
     name        = "[CSGO] Competitive Ranks API",
     url         = "https://kruzefag.ru/"
@@ -61,7 +60,7 @@ public APLRes AskPluginLoad2(Handle hMySelf, bool bLate, char[] szError, int iMa
 }
 
 public void OnPluginStart() {
-    HookEvent("announce_phase_end", view_as<EventHook>(OnAnnouncePhaseEnd));
+    HookEvent("begin_new_match", OnGameStart, EventHookMode_PostNoCopy);
 }
 
 public void OnMapStart() {
@@ -79,11 +78,6 @@ public void OnMapEnd() {
         SDKUnhook(g_iPlayerManagerEntity, SDKHook_ThinkPost, OnThinkPost);
         g_bWorking = false;
     }
-}
-
-public bool OnClientConnect(int iClient, char[] szRejectMsg, int iMaxRejectMsgLength) {
-    UTIL_SetRank(iClient, NoRank, false);
-    return true;
 }
 
 /******************************************************************************
@@ -242,6 +236,10 @@ CompetitiveGORankType UTIL_IntegerToCompetitiveGORankType(int iRankType) {
     return eRes;
 }
 
+void UTIL_TriggerUpdate() {
+	CreateTimer(0.5, OnUpdateScoreboard);
+}
+
 /******************************************************************************
  * Hooks
  ******************************************************************************/
@@ -250,14 +248,22 @@ public void OnThinkPost(int iCompetitiveRankEntity) {
     SetEntDataArray(iCompetitiveRankEntity, g_iCompetitiveRankTypeOffset, g_iSelectedRanksTypes, MaxClients + 1);
 }
 
-public Action OnPlayerRunCmd(int iClient, int &iButtons) {
-    if ((iButtons & IN_SCORE) && !(GetEntProp(iClient, Prop_Data, "m_nOldButtons") & IN_SCORE)) {
-        UTIL_UpdateScoreTable(iClient);
-    }
+public void OnGameStart(Handle hEvent, const char[] szEventName, bool bDontBroadcast) {
+    UTIL_TriggerUpdate();
 }
 
-public void OnAnnouncePhaseEnd() {
-    UTIL_UpdateScoreTable();
+public bool OnClientConnect(int iClient, char[] szRejectMsg, int iMaxRejectMsgLength) {
+    UTIL_SetRank(iClient, NoRank, false);
+    return true;
+}
+
+// TODO: OnClientAuthorized hook too?
+public void OnClientPutInServer(int iClient) {
+	UTIL_TriggerUpdate();
+}
+
+public Action OnUpdateScoreboard(Handle hTimer) {
+	UTIL_UpdateScoreTable();
 }
 
 /******************************************************************************

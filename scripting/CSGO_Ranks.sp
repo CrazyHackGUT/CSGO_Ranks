@@ -16,6 +16,7 @@ enum ForwardTypeEnum {
 }
 
 stock char          gc_usermsg_ranks[]                  = "ServerRankRevealAll";    // bad-bad-bad
+stock char          gc_szFormatString[]                 = "%i.svg";
 
 int                     g_iSelectedRanksTypes[MAXPLAYERS + 1];
 CompetitiveGORank       g_iSelectedRanks[MAXPLAYERS + 1];
@@ -29,7 +30,7 @@ bool                    g_bWorking;
  ******************************************************************************/
 public Plugin myinfo = {
     description = "Provides API for changing player ranks",
-    version     = "1.3.2",
+    version     = "1.3.3",
     author      = "CrazyHackGUT aka Kruzya",
     name        = "[CSGO] Competitive Ranks API",
     url         = "https://kruzefag.ru/"
@@ -64,11 +65,20 @@ public void OnPluginStart() {
 }
 
 public void OnMapStart() {
-    g_iPlayerManagerEntity          = FindEntityByClassname(MaxClients + 1, "cs_player_manager");
+    g_iPlayerManagerEntity = FindEntityByClassname(MaxClients + 1, "cs_player_manager");
 
     if (g_iPlayerManagerEntity != -1) {
         g_bWorking = SDKHookEx(g_iPlayerManagerEntity, SDKHook_ThinkPost, OnThinkPost);
     }
+
+    char szPath[PLATFORM_MAX_PATH];
+    int iStartPos = strcopy(szPath, sizeof(szPath), "materials/panorama/images/icons/skillgroup");
+
+    #define RANK_LOOP(%0,%1) for (int iRankId = %0; iRankId <= %1; ++iRankId) { FormatEx(szPath[iStartPos], sizeof(szPath)-iStartPos, gc_szFormatString, iRankId); AddFileToDownloadsTable(szPath); }
+    RANK_LOOP(51, 68)
+    RANK_LOOP(71, 85)
+    RANK_LOOP(91, 95)
+    #undef RANK_LOOP
 }
 
 public void OnMapEnd() {

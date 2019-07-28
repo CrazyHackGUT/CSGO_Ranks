@@ -20,7 +20,6 @@ stock char          gc_usermsg_ranks[]                  = "ServerRankRevealAll";
 int                     g_iSelectedRanksTypes[MAXPLAYERS + 1];
 CompetitiveGORank       g_iSelectedRanks[MAXPLAYERS + 1];
 Handle                  g_hForwards[ForwardTypeEnum];
-int                     g_iCompetitiveRankTypeOffset;
 int                     g_iCompetitiveRankOffset;
 int                     g_iPlayerManagerEntity;
 bool                    g_bWorking;
@@ -30,7 +29,7 @@ bool                    g_bWorking;
  ******************************************************************************/
 public Plugin myinfo = {
     description = "Provides API for changing player ranks",
-    version     = "1.2.0.3",
+    version     = "1.3",
     author      = "CrazyHackGUT aka Kruzya",
     name        = "[CSGO] Competitive Ranks API",
     url         = "https://kruzefag.ru/"
@@ -51,8 +50,8 @@ public APLRes AskPluginLoad2(Handle hMySelf, bool bLate, char[] szError, int iMa
     CreateNative("SetPlayerCompetitiveRankType",    Native_SetRankType);
     CreateNative("GetPlayerCompetitiveRankType",    Native_GetRankType);
 
-    g_hForwards[PreForward]     = CreateGlobalForward("OnPreChangePlayerCompetitiveRank",   ET_Hook,    Param_Cell, Param_CellByRef);
-    g_hForwards[PostForward]    = CreateGlobalForward("OnPostChangePlayerCompetitiveRank",  ET_Ignore,  Param_Cell, Param_Cell);
+    g_hForwards[PreForward]     = CreateGlobalForward("OnPreChangePlayerCompetitiveRank",   ET_Hook,    Param_CellByRef, Param_CellByRef);
+    g_hForwards[PostForward]    = CreateGlobalForward("OnPostChangePlayerCompetitiveRank",  ET_Ignore,  Param_Cell,      Param_Cell);
 
     RegPluginLibrary("csgoranks");
 
@@ -61,11 +60,10 @@ public APLRes AskPluginLoad2(Handle hMySelf, bool bLate, char[] szError, int iMa
 
 public void OnPluginStart() {
     HookEvent("begin_new_match", OnGameStart, EventHookMode_PostNoCopy);
+    g_iCompetitiveRankOffset = FindSendPropInfo("CCSPlayerResource", "m_iCompetitiveRanking");
 }
 
 public void OnMapStart() {
-    g_iCompetitiveRankTypeOffset    = FindSendPropInfo("CCSPlayerResource", "m_iCompetitiveRankType");
-    g_iCompetitiveRankOffset        = FindSendPropInfo("CCSPlayerResource", "m_iCompetitiveRanking");
     g_iPlayerManagerEntity          = FindEntityByClassname(MaxClients + 1, "cs_player_manager");
 
     if (g_iPlayerManagerEntity != -1) {
@@ -194,6 +192,7 @@ CompetitiveGORankType UTIL_GetRankType(int iClient) {
     return UTIL_IntegerToCompetitiveGORankType(g_iSelectedRanksTypes[iClient]);
 }
 
+// TODO: change this checker. In Danger Zone last 3 ranks isn't available.
 bool UTIL_IsValidCompetitiveRank(CompetitiveGORank eRank) {
     return (eRank >= NoRank && eRank <= GlobalElite);
 }
@@ -219,8 +218,9 @@ void UTIL_UpdateScoreTable(int iClient = 0) {
 int UTIL_CompetitiveGORankTypeToInteger(CompetitiveGORankType eRankType) {
     int iRes = -1;
     switch (eRankType) {
-        case Default:   iRes = 0;
-        case Partners:  iRes = 7;
+        case Default:    iRes = 0;
+        case Partners:   iRes = 50;
+        case DangerZone: iRes = 70;
     }
 
     return iRes;
@@ -229,8 +229,9 @@ int UTIL_CompetitiveGORankTypeToInteger(CompetitiveGORankType eRankType) {
 CompetitiveGORankType UTIL_IntegerToCompetitiveGORankType(int iRankType) {
     CompetitiveGORankType eRes = view_as<CompetitiveGORankType>(-1);
     switch (iRankType) {
-        case 0: eRes = Default;
-        case 7: eRes = Partners;
+        case 0:  eRes = Default;
+        case 50: eRes = Partners;
+        case 70: eRes = DangerZone;
     }
 
     return eRes;
@@ -244,8 +245,9 @@ void UTIL_TriggerUpdate() {
  * Hooks
  ******************************************************************************/
 public void OnThinkPost(int iCompetitiveRankEntity) {
-    SetEntDataArray(iCompetitiveRankEntity, g_iCompetitiveRankOffset, view_as<int>(g_iSelectedRanks), MaxClients + 1);
-    SetEntDataArray(iCompetitiveRankEntity, g_iCompetitiveRankTypeOffset, g_iSelectedRanksTypes, MaxClients + 1);
+    for (int iClient = MaxClients; iClient != 0; --iClient) if (IsClientInGame(iClient)) {
+        SetEntData(iCompetitiveRankEntity, g_iCompetitiveRankOffset + (iClient * 4), g_iSelectedRanks[iClient] + g_iSelectedRanksTypes[iClient]);
+    }
 }
 
 public void OnGameStart(Handle hEvent, const char[] szEventName, bool bDontBroadcast) {
@@ -279,13 +281,14 @@ bool FireAPIEvent(ForwardTypeEnum eForwardType, int iClient, CompetitiveGORank &
 
     Call_StartForward(hForward);
     Call_PushCell(iClient);
-    (eForwardType == PreForward) ?
-        Call_PushCellRef(eRank) :
+    if (eForwardType == PreForward)
+    {
+        Call_PushCellRef(eRank);
+        Call_PushCellRef(eRankType);
+    } else {
         Call_PushCell(eRank);
-    (eForwardType == PreForward) ?
-        Call_PushCellRef(eRankType) :
         Call_PushCell(eRankType);
-
+    }
     Call_Finish(eResult);
 
     if (eForwardType == PreForward) {

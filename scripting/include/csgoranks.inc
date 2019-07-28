@@ -5,6 +5,9 @@
 
 /******************************************************************************
  * CS:GO Competitive Ranks Enum
+ *
+ * NOTE: 3 last ranks is not available in "Danger Zone".
+ *       All ranks in "Danger Zone" mode is named otherwise.
  ******************************************************************************/
 enum CompetitiveGORank {
     NoRank,                         /**< Player don't have a Rank */
@@ -36,7 +39,8 @@ enum CompetitiveGORank {
 
 enum CompetitiveGORankType {
     Default,                        /**< Default rank */
-    Partners                        /**< Rank in style "Operation Hydra - Partners" */
+    Partners,                       /**< Rank in style "Operation Hydra - Partners" */
+    DangerZone                      /**< Rank from "Danger Zone" mode. */
 }
 
 /******************************************************************************

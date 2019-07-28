@@ -29,7 +29,7 @@ bool                    g_bWorking;
  ******************************************************************************/
 public Plugin myinfo = {
     description = "Provides API for changing player ranks",
-    version     = "1.3",
+    version     = "1.3.1",
     author      = "CrazyHackGUT aka Kruzya",
     name        = "[CSGO] Competitive Ranks API",
     url         = "https://kruzefag.ru/"
@@ -198,7 +198,7 @@ bool UTIL_IsValidCompetitiveRank(CompetitiveGORank eRank) {
 }
 
 bool UTIL_IsValidCompetitiveRankType(CompetitiveGORankType eRankType) {
-    return (eRankType >= Default && eRankType <= Partners);
+    return (eRankType >= Default && eRankType <= DangerZone);
 }
 
 void UTIL_UpdateScoreTable(int iClient = 0) {

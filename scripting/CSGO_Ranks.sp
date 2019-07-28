@@ -29,7 +29,7 @@ bool                    g_bWorking;
  ******************************************************************************/
 public Plugin myinfo = {
     description = "Provides API for changing player ranks",
-    version     = "1.3.1",
+    version     = "1.3.2",
     author      = "CrazyHackGUT aka Kruzya",
     name        = "[CSGO] Competitive Ranks API",
     url         = "https://kruzefag.ru/"
@@ -246,7 +246,7 @@ void UTIL_TriggerUpdate() {
  ******************************************************************************/
 public void OnThinkPost(int iCompetitiveRankEntity) {
     for (int iClient = MaxClients; iClient != 0; --iClient) if (IsClientInGame(iClient)) {
-        SetEntData(iCompetitiveRankEntity, g_iCompetitiveRankOffset + (iClient * 4), g_iSelectedRanks[iClient] + g_iSelectedRanksTypes[iClient]);
+        SetEntData(iCompetitiveRankEntity, g_iCompetitiveRankOffset + (iClient * 4), view_as<int>(g_iSelectedRanks[iClient]) + g_iSelectedRanksTypes[iClient]);
     }
 }
 
